@@ -38,8 +38,7 @@ public class Machine {
 		Translator t = new Translator(args[0]);
 		t.readAndTranslate(m.getLabels(), m.getProg());
 
-		System.out.println("Here is the program; it has " + m.getProg().size()
-				+ " instructions.");
+		System.out.println("Here is the program; it has " + m.getProg().size() + " instructions.");
 		System.out.println(m);
 
 		System.out.println("Beginning program execution.");
