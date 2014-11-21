@@ -29,15 +29,14 @@ public class Labels {
 		return labels.indexOf(lab);
 	}
 
+	// Set the number of elements in the list to 0
+	public void reset() {
+		labels.clear();
+	}
+
 	// representation of this instance, "(label 0, label 1, ..., label (n-1))"
 	@Override
 	public String toString() {
 		return "(" + labels.stream().map(String::toString).collect(joining(", ")) + ")";
-	}
-
-	// Set the number of elements in the list to 0
-
-	public void reset() {
-		labels.clear();
 	}
 }
