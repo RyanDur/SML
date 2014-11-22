@@ -15,7 +15,7 @@ public class LinInstruction extends Instruction {
 	}
 
 	public LinInstruction(String label, int register, int value) {
-		super(label, "lin");
+		this(label, "lin");
 		this.register = register;
 		this.value = value;
 
@@ -28,7 +28,6 @@ public class LinInstruction extends Instruction {
 
 	@Override
 	public String toString() {
-		return super.toString() + " register " + register + " value is "
-				+ value;
+		return super.toString() + " register " + register + " value is " + value;
 	}
 }
