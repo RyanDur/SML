@@ -4,6 +4,8 @@ import lombok.Data;
 
 import java.util.ArrayList;
 
+import static java.util.stream.Collectors.joining;
+
 /*
  * The machine language interpreter
  */
@@ -35,7 +37,7 @@ public class Machine {
 	public static void main(String[] args) {
 
 		Machine m = new Machine();
-		Translator t = new Translator(args[0]);
+		Translator t = new Translator("instructions.txt");
 		t.readAndTranslate(m.getLabels(), m.getProg());
 
 		System.out.println("Here is the program; it has " + m.getProg().size() + " instructions.");
@@ -53,11 +55,8 @@ public class Machine {
 
 	@Override
 	public String toString() {
-//		return getProg().stream().map(Instruction::toString).collect(Collectors.joining("\n"));
-		StringBuilder s = new StringBuilder();
-		for (int i = 0; i != getProg().size(); i++)
-			s.append(getProg().get(i)).append("\n");
-		return s.toString();
+		return getProg().stream().map(Instruction::toString)
+				.collect(joining("\n")).concat("\n");
 	}
 
 	// Execute the program in prog, beginning at instruction 0.
