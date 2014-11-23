@@ -1,6 +1,7 @@
 package sml;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -40,7 +41,7 @@ public class Translator {
             // Each iteration processes line and reads the next line into line
             Files.lines(Paths.get(SRC, fileName)).forEach(line -> {
                 this.line = line;
-                String label = scan();
+                String label = scanWord();
                 if (label.length() > 0) {
                     Instruction ins = getInstruction(label);
                     if (ins != null) {
@@ -60,65 +61,41 @@ public class Translator {
     // removed. Translate line into an instruction with label label
     // and return the instruction
     public Instruction getInstruction(String label) {
-        int s1; // Possible operands of the instruction
-        int s2;
-        int r;
-
-        if (line.equals(""))
-            return null;
-
-        String ins = scan();
-
-        switch (ins) {
-            case "lin":
-                r = scanInt();
-                s1 = scanInt();
-                return new LinInstruction(label, r, s1);
-            case "bnz":
-                r = scanInt();
-                return new BnzInstruction(label, r, line);
-            case "out":
-                r = scanInt();
-                return new OutInstruction(label, r);
-            default:
-                try {
-                    r = scanInt();
-                    s1 = scanInt();
-                    s2 = scanInt();
-                    Class<?> clazz = Class.forName(getClassName(ins));
-                    return (Instruction) clazz.getConstructor(String.class, int.class, int.class, int.class)
-                            .newInstance(label, r, s1, s2);
-                } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException | InstantiationException e) {
-                    System.out.println("Holy Crap! Can't find " + e.getMessage());
-                }
-
-//            case "add":
-
-//                return new AddInstruction(label, r, s1, s2);
-//            case "mul":
-//                r = scanInt();
-//                s1 = scanInt();
-//                s2 = scanInt();
-//                return new MulInstruction(label, r, s1, s2);
-//            case "sub":
-//                r = scanInt();
-//                s1 = scanInt();
-//                s2 = scanInt();
-//                return new SubInstruction(label, r, s1, s2);
-//            case "div":
-//                r = scanInt();
-//                s1 = scanInt();
-//                s2 = scanInt();
-//                return new DivInstruction(label, r, s1, s2);
+        if (line.equals("")) return null;
+        try {
+            Class<?> clazz = Class.forName(getClassName(scanWord()));
+            Class<?>[] parameterList = getParameterTypes(clazz.getDeclaredConstructors()[0]);
+            List<Object> params = new ArrayList<>();
+            params.add(label);
+            for (int i = params.size(); i < parameterList.length; i++) {
+                if (parameterList[i].isPrimitive()) params.add(scanInt());
+                else params.add(scanWord());
+            }
+            return (Instruction) clazz.getDeclaredConstructor(parameterList).newInstance(params.toArray());
+        } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException | InstantiationException e) {
+            System.out.println("Holy Crap! Can't find " + e.getMessage());
         }
-
-        // You will have to write code here for the other instructions.
-
         return null;
     }
 
+    private Class<?>[] getParameterTypes(Constructor constructor) {
+        List<Class<?>> collect = Arrays.stream(constructor.getParameterTypes()).map(c -> {
+            if (c.isPrimitive()) {
+                return int.class;
+            } else {
+                try {
+                    return c.newInstance().getClass();
+                } catch (InstantiationException | IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+            }
+            return null;
+        }).collect(Collectors.toList());
+        return collect.toArray(new Class<?>[collect.size()]);
+    }
+
     private String getClassName(String ins) {
-        return "sml."  + ins.substring(0, 1).toUpperCase() +
+        return "sml." + ins.substring(0, 1).toUpperCase() +
                 ins.substring(1, ins.length()) +
                 "Instruction";
     }
@@ -127,7 +104,7 @@ public class Translator {
      * Return the first word of line and remove it from line. If there is no
      * word, return ""
      */
-    public String scan() {
+    public String scanWord() {
         line = line.trim();
         if (line.length() == 0) return "";
         List<String> words = Arrays.stream(line.split(" ")).collect(Collectors.toList());
@@ -139,7 +116,7 @@ public class Translator {
     // Return the first word of line as an integer. If there is
     // any error, return the maximum int
     public int scanInt() {
-        String word = scan();
+        String word = scanWord();
         if (word.length() == 0) {
             return Integer.MAX_VALUE;
         }

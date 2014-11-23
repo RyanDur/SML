@@ -10,12 +10,8 @@ public class LinInstruction extends Instruction {
 	private int register;
 	private int value;
 
-	public LinInstruction(String label, String opcode) {
-		super(label, opcode);
-	}
-
 	public LinInstruction(String label, int register, int value) {
-		this(label, "lin");
+		super(label, "lin");
 		this.register = register;
 		this.value = value;
 
