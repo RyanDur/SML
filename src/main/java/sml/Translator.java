@@ -39,7 +39,7 @@ public class Translator {
                 this.line = line;
                 String label = line.split(" ")[0];
                 if (label.length() > 0) {
-                    Instruction ins = getInstruction();
+                    Instruction ins = getInstruction(getInstructionType());
                     if (ins != null) {
                         lab.addLabel(label);
                         prog.add(ins);
@@ -56,10 +56,10 @@ public class Translator {
     // line should consist of an MML instruction, with its label already
     // removed. Translate line into an instruction with label label
     // and return the instruction
-    public Instruction getInstruction() {
+    public Instruction getInstruction(String type) {
         if (line.equals("")) return null;
         try {
-            Class<?> clazz = Class.forName(getClassName(getInstructionType()));
+            Class<?> clazz = Class.forName(getClassName(type));
             Class<?>[] parameterList = getParameterTypes(clazz.getDeclaredConstructors()[0]);
             return (Instruction) clazz.getDeclaredConstructor(parameterList).newInstance(Arrays.stream(parameterList)
                     .map(param -> param.isPrimitive() ? unShiftInt() : unShiftWord()).toArray());
@@ -88,7 +88,7 @@ public class Translator {
     public int unShiftInt() {
         String word = unShiftWord();
         if (word.length() == 0) return Integer.MAX_VALUE;
-        
+
         try {
             return Integer.parseInt(word);
         } catch (NumberFormatException e) {
