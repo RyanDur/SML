@@ -1,6 +1,7 @@
 package sml;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -67,42 +68,59 @@ public class Translator {
             return null;
 
         String ins = scan();
+
         switch (ins) {
-            case "add":
-                r = scanInt();
-                s1 = scanInt();
-                s2 = scanInt();
-                return new AddInstruction(label, r, s1, s2);
             case "lin":
                 r = scanInt();
                 s1 = scanInt();
                 return new LinInstruction(label, r, s1);
-            case "mul":
-                r = scanInt();
-                s1 = scanInt();
-                s2 = scanInt();
-                return new MulInstruction(label, r, s1, s2);
-            case "sub":
-                r = scanInt();
-                s1 = scanInt();
-                s2 = scanInt();
-                return new SubInstruction(label, r, s1, s2);
-            case "div":
-                r = scanInt();
-                s1 = scanInt();
-                s2 = scanInt();
-                return new DivInstruction(label, r, s1, s2);
             case "bnz":
                 r = scanInt();
                 return new BnzInstruction(label, r, line);
             case "out":
                 r = scanInt();
                 return new OutInstruction(label, r);
+            default:
+                try {
+                    r = scanInt();
+                    s1 = scanInt();
+                    s2 = scanInt();
+                    Class<?> clazz = Class.forName(getClassName(ins));
+                    return (Instruction) clazz.getConstructor(String.class, int.class, int.class, int.class)
+                            .newInstance(label, r, s1, s2);
+                } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException | InstantiationException e) {
+                    System.out.println("Holy Crap! Can't find " + e.getMessage());
+                }
+
+//            case "add":
+
+//                return new AddInstruction(label, r, s1, s2);
+//            case "mul":
+//                r = scanInt();
+//                s1 = scanInt();
+//                s2 = scanInt();
+//                return new MulInstruction(label, r, s1, s2);
+//            case "sub":
+//                r = scanInt();
+//                s1 = scanInt();
+//                s2 = scanInt();
+//                return new SubInstruction(label, r, s1, s2);
+//            case "div":
+//                r = scanInt();
+//                s1 = scanInt();
+//                s2 = scanInt();
+//                return new DivInstruction(label, r, s1, s2);
         }
 
         // You will have to write code here for the other instructions.
 
         return null;
+    }
+
+    private String getClassName(String ins) {
+        return "sml."  + ins.substring(0, 1).toUpperCase() +
+                ins.substring(1, ins.length()) +
+                "Instruction";
     }
 
     /*
