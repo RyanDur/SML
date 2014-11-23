@@ -41,7 +41,7 @@ public class Translator {
             // Each iteration processes line and reads the next line into line
             Files.lines(Paths.get(SRC, fileName)).forEach(line -> {
                 this.line = line;
-                String label = scanWord();
+                String label = unShiftWord();
                 if (label.length() > 0) {
                     Instruction ins = getInstruction(label);
                     if (ins != null) {
@@ -63,13 +63,13 @@ public class Translator {
     public Instruction getInstruction(String label) {
         if (line.equals("")) return null;
         try {
-            Class<?> clazz = Class.forName(getClassName(scanWord()));
+            Class<?> clazz = Class.forName(getClassName(unShiftWord()));
             Class<?>[] parameterList = getParameterTypes(clazz.getDeclaredConstructors()[0]);
             List<Object> params = new ArrayList<>();
             params.add(label);
             for (int i = params.size(); i < parameterList.length; i++) {
-                if (parameterList[i].isPrimitive()) params.add(scanInt());
-                else params.add(scanWord());
+                if (parameterList[i].isPrimitive()) params.add(unShiftInt());
+                else params.add(unShiftWord());
             }
             return (Instruction) clazz.getDeclaredConstructor(parameterList).newInstance(params.toArray());
         } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException | InstantiationException e) {
@@ -104,7 +104,7 @@ public class Translator {
      * Return the first word of line and remove it from line. If there is no
      * word, return ""
      */
-    public String scanWord() {
+    public String unShiftWord() {
         line = line.trim();
         if (line.length() == 0) return "";
         List<String> words = Arrays.stream(line.split(" ")).collect(Collectors.toList());
@@ -115,8 +115,8 @@ public class Translator {
 
     // Return the first word of line as an integer. If there is
     // any error, return the maximum int
-    public int scanInt() {
-        String word = scanWord();
+    public int unShiftInt() {
+        String word = unShiftWord();
         if (word.length() == 0) {
             return Integer.MAX_VALUE;
         }

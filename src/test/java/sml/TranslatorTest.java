@@ -30,6 +30,6 @@ public class TranslatorTest {
     @Test
     public void shouldBeAbleToGetTheFirstWordFromALine() {
         String line = "Add something";
-        System.out.println(translator.scanWord());
+        System.out.println(translator.unShiftWord());
     }
 }
