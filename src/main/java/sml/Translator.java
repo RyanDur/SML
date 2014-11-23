@@ -19,8 +19,6 @@ public class Translator {
     // word has no whitespace
     // If word and line are not empty, line begins with whitespace
     private String line = "";
-    private Labels labels; // The labels of the program being translated
-    private ArrayList<Instruction> program; // The program to be created
     private String fileName; // source file of SML code
 
     private static final String SRC = "src";
@@ -33,20 +31,18 @@ public class Translator {
     // prog (the program)
     // return "no errors were detected"
     public boolean readAndTranslate(Labels lab, ArrayList<Instruction> prog) {
-        labels = lab;
-        labels.reset();
-        program = prog;
-        program.clear();
+        lab.reset();
+        prog.clear();
         try {
             // Each iteration processes line and reads the next line into line
             Files.lines(Paths.get(SRC, fileName)).forEach(line -> {
                 this.line = line;
-                String label = unShiftWord();
+                String label = line.split(" ")[0];
                 if (label.length() > 0) {
-                    Instruction ins = getInstruction(label);
+                    Instruction ins = getInstruction();
                     if (ins != null) {
-                        labels.addLabel(label);
-                        program.add(ins);
+                        lab.addLabel(label);
+                        prog.add(ins);
                     }
                 }
             });
@@ -60,44 +56,18 @@ public class Translator {
     // line should consist of an MML instruction, with its label already
     // removed. Translate line into an instruction with label label
     // and return the instruction
-    public Instruction getInstruction(String label) {
+    public Instruction getInstruction() {
         if (line.equals("")) return null;
         try {
-            Class<?> clazz = Class.forName(getClassName(unShiftWord()));
+            Class<?> clazz = Class.forName(getClassName(getInstructionType()));
             Class<?>[] parameterList = getParameterTypes(clazz.getDeclaredConstructors()[0]);
-            List<Object> params = new ArrayList<>();
-            params.add(label);
-            for (int i = params.size(); i < parameterList.length; i++) {
-                if (parameterList[i].isPrimitive()) params.add(unShiftInt());
-                else params.add(unShiftWord());
-            }
-            return (Instruction) clazz.getDeclaredConstructor(parameterList).newInstance(params.toArray());
-        } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException | InstantiationException e) {
+            return (Instruction) clazz.getDeclaredConstructor(parameterList).newInstance(Arrays.stream(parameterList)
+                    .map(param -> param.isPrimitive() ? unShiftInt() : unShiftWord()).toArray());
+        } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException |
+                InvocationTargetException | InstantiationException e) {
             System.out.println("Holy Crap! Can't find " + e.getMessage());
         }
         return null;
-    }
-
-    private Class<?>[] getParameterTypes(Constructor constructor) {
-        List<Class<?>> collect = Arrays.stream(constructor.getParameterTypes()).map(c -> {
-            if (c.isPrimitive()) {
-                return int.class;
-            } else {
-                try {
-                    return c.newInstance().getClass();
-                } catch (InstantiationException | IllegalAccessException e) {
-                    e.printStackTrace();
-                }
-            }
-            return null;
-        }).collect(Collectors.toList());
-        return collect.toArray(new Class<?>[collect.size()]);
-    }
-
-    private String getClassName(String ins) {
-        return "sml." + ins.substring(0, 1).toUpperCase() +
-                ins.substring(1, ins.length()) +
-                "Instruction";
     }
 
     /*
@@ -117,14 +87,35 @@ public class Translator {
     // any error, return the maximum int
     public int unShiftInt() {
         String word = unShiftWord();
-        if (word.length() == 0) {
-            return Integer.MAX_VALUE;
-        }
-
+        if (word.length() == 0) return Integer.MAX_VALUE;
+        
         try {
             return Integer.parseInt(word);
         } catch (NumberFormatException e) {
             return Integer.MAX_VALUE;
         }
+    }
+
+    private Class<?>[] getParameterTypes(Constructor constructor) {
+        List<Class<?>> collect = Arrays.stream(constructor.getParameterTypes()).map(c -> {
+            if (c.isPrimitive()) return int.class;
+            else try {
+                return c.newInstance().getClass();
+            } catch (InstantiationException | IllegalAccessException e) {
+                e.printStackTrace();
+                return null;
+            }
+        }).collect(Collectors.toList());
+        return collect.toArray(new Class<?>[collect.size()]);
+    }
+
+    private String getClassName(String ins) {
+        return "sml." + ins.substring(0, 1).toUpperCase() + ins.substring(1, ins.length()) + "Instruction";
+    }
+    private String getInstructionType() {
+        String temp = unShiftWord();
+        String type = unShiftWord();
+        line = temp + " " + line;
+        return type;
     }
 }
