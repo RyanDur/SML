@@ -112,6 +112,7 @@ public class Translator {
     private String getClassName(String ins) {
         return "sml." + ins.substring(0, 1).toUpperCase() + ins.substring(1, ins.length()) + "Instruction";
     }
+    
     private String getInstructionType() {
         String temp = unShiftWord();
         String type = unShiftWord();
